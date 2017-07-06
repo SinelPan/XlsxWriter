@@ -6381,7 +6381,7 @@ class Worksheet(xmlwriter.XMLwriter):
                 self._xml_start_tag( 'x14:conditionalFormattings' )
                 self._xml_start_tag( 'x14:conditionalFormatting',[('xmlns:xm','http://schemas.microsoft.com/office/excel/2006/main')])
                 self._xml_start_tag( 'x14:cfRule', [("type",'dataBar'), ("id",negpos_databar["uuid"])])
-                self._xml_start_tag( 'x14:dataBar', [("gradient","false")])
+                self._xml_start_tag( 'x14:dataBar', [("gradient","false"),("rgb","d5e9d6")])
                 # self._xml_start_tag( 'x14:dataBar', [("axisPosition",'middle'),("gradient","false")])
                 self._xml_empty_tag( 'x14:cfvo', [("type",'min')])
                 self._xml_empty_tag( 'x14:cfvo', [("type",'max')])
