@@ -6388,10 +6388,9 @@ class Worksheet(xmlwriter.XMLwriter):
                 self._xml_start_tag( 'x14:cfvo', [("type",'min')])
                 self._xml_end_tag( 'x14:cfvo' )
                 self._xml_start_tag( 'x14:cfvo', [("type",'max')])
-                # self._xml_empty_tag( 'x14:axisColor', [("rgb",'FF000000')])
                 self._xml_end_tag( 'x14:cfvo' )
-
                 self._xml_empty_tag( 'x14:negativeFillColor', [("rgb",'FF953735')])
+                self._xml_empty_tag( 'x14:axisColor', [("rgb",'FF000000')])
                 self._xml_end_tag( 'x14:dataBar' )
                 self._xml_end_tag( 'x14:cfRule' )
                 self._xml_data_element( 'xm:sqref', negpos_databar["cond_range"] )
