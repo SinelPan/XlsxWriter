@@ -1,6 +1,6 @@
 import xlsxwriter
 
-workbook = xlsxwriter.Workbook('/tmp/conditional_format.xlsx')
+workbook = xlsxwriter.Workbook('conditional_format.xlsx')
 worksheet1 = workbook.add_worksheet()
 
 keys = [
@@ -68,6 +68,7 @@ chinese_keys = [
 ]
 
 datas = [
+    chinese_keys,
     [
         "有书创始人说","1","2017-05-06","23","35",20000,
         2000,1000,840,155,5,400,5,50,
@@ -113,7 +114,7 @@ worksheet1.write_comment('Y1',"原文页阅读人数/阅读量")
 
 databar_column = ["G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y"]
 for c in databar_column:
-    worksheet1.conditional_format('%s2:%s%s'%(c,c,length),{'type': 'data_bar'})
+    worksheet1.conditional_format('%s2:%s%s'%(c,c,length),{'type': 'data_bar','bar_color':'#d5e9d6'})
 
 # merge_format = workbook.add_format({'align': 'center'})
 # worksheet1.merge_range('B3:D3', 'Merged Cells', merge_format)
