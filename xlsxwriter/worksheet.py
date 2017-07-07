@@ -38,7 +38,7 @@ from .utility import supported_datetime
 from .utility import datetime_to_excel_datetime
 from .utility import quote_sheetname
 
-
+import uuid
 ###############################################################################
 #
 # Decorator functions.
@@ -163,6 +163,7 @@ class Worksheet(xmlwriter.XMLwriter):
 
         super(Worksheet, self).__init__()
 
+        self.uuid = uuid.uuid1()
         self.name = None
         self.index = None
         self.str_table = None
@@ -349,6 +350,8 @@ class Worksheet(xmlwriter.XMLwriter):
         self.vertical_dpi = 0
         self.horizontal_dpi = 0
 
+        self.negpos_databars = []
+        self._negpos_databars = []
     @convert_cell_args
     def write(self, row, col, *args):
         """
@@ -5927,6 +5930,13 @@ class Worksheet(xmlwriter.XMLwriter):
         attributes = [('sqref', cond_range)]
         self._xml_start_tag('conditionalFormatting', attributes)
         for param in params:
+            if param.get("type") == "dataBar":
+                negpos_databar = {
+                    "cond_range":cond_range,
+                    "uuid":"{"+str(uuid.uuid1()).upper()+"}"
+                }
+                self.negpos_databars.append(negpos_databar)
+                self._negpos_databars.append(negpos_databar)
             # Write the cfRule element.
             self._write_cf_rule(param)
         self._xml_end_tag('conditionalFormatting')
@@ -6072,20 +6082,31 @@ class Worksheet(xmlwriter.XMLwriter):
         self._write_cfvo(param['min_type'], param['min_value'])
         self._write_cfvo(param['max_type'], param['max_value'])
         self._write_color('rgb', param['bar_color'])
-
+        # self._xml_empty_tag( 'color', [("theme","6"),("tint",'-0.249977111117893')])
         self._xml_end_tag('dataBar')
+
+        # if param.get("negpos"):
+        this_negpos_databar = self._negpos_databars.pop(0)
+        self._xml_start_tag('extLst')
+        self._xml_start_tag('ext',[('uri','{B025F937-C7B1-47D3-B67F-A62EFF666E3E}'),('xmlns:x14','http://schemas.microsoft.com/office/spreadsheetml/2009/9/main')])
+        self._xml_data_element('x14:id',this_negpos_databar["uuid"])
+        self._xml_end_tag('ext')
+        self._xml_end_tag('extLst')
+
 
     def _write_cfvo(self, cf_type, val):
         # Write the <cfvo> element.
         attributes = [('type', cf_type), ('val', val)]
 
-        self._xml_empty_tag('cfvo', attributes)
+        self._xml_start_tag('cfvo', attributes)
+        self._xml_end_tag( 'cfvo' )
 
     def _write_color(self, name, value):
         # Write the <color> element.
         attributes = [(name, value)]
 
-        self._xml_empty_tag('color', attributes)
+        self._xml_start_tag('color', attributes)
+        self._xml_end_tag( 'color' )
 
     def _write_selections(self):
         # Write the <selection> elements.
@@ -6305,57 +6326,78 @@ class Worksheet(xmlwriter.XMLwriter):
         count = len(sparklines)
 
         # Return if worksheet doesn't contain any sparklines.
-        if not count:
+        if not count and not self.negpos_databars:
             return
 
         # Write the extLst element.
         self._xml_start_tag('extLst')
 
         # Write the ext element.
-        self._write_ext()
+        # self._write_ext()
 
         # Write the x14:sparklineGroups element.
-        self._write_sparkline_groups()
+        # self._write_sparkline_groups()
+        #
+        # # Write the sparkline elements.
+        # for sparkline in reversed(sparklines):
+        #
+        #     # Write the x14:sparklineGroup element.
+        #     self._write_sparkline_group(sparkline)
+        #
+        #     # Write the x14:colorSeries element.
+        #     self._write_color_series(sparkline['series_color'])
+        #
+        #     # Write the x14:colorNegative element.
+        #     self._write_color_negative(sparkline['negative_color'])
+        #
+        #     # Write the x14:colorAxis element.
+        #     self._write_color_axis()
+        #
+        #     # Write the x14:colorMarkers element.
+        #     self._write_color_markers(sparkline['markers_color'])
+        #
+        #     # Write the x14:colorFirst element.
+        #     self._write_color_first(sparkline['first_color'])
+        #
+        #     # Write the x14:colorLast element.
+        #     self._write_color_last(sparkline['last_color'])
+        #
+        #     # Write the x14:colorHigh element.
+        #     self._write_color_high(sparkline['high_color'])
+        #
+        #     # Write the x14:colorLow element.
+        #     self._write_color_low(sparkline['low_color'])
+        #
+        #     if sparkline['date_axis']:
+        #         self._xml_data_element('xm:f', sparkline['date_axis'])
+        #
+        #     self._write_sparklines(sparkline)
+        #
+        #     self._xml_end_tag('x14:sparklineGroup')
+        #
+        # self._xml_end_tag('x14:sparklineGroups')
+        # self._xml_end_tag('ext')
+        if self.negpos_databars:
+            self._xml_start_tag( 'ext', [("uri",'{78C0D931-6437-407d-A8EE-F0AAD7539E65}'), ('xmlns:x14','http://schemas.microsoft.com/office/spreadsheetml/2009/9/main')])
+            self._xml_start_tag( 'x14:conditionalFormattings' )
+            for negpos_databar in self.negpos_databars:
+                self._xml_start_tag( 'x14:conditionalFormatting',[('xmlns:xm','http://schemas.microsoft.com/office/excel/2006/main')])
+                self._xml_start_tag( 'x14:cfRule', [("type",'dataBar'), ("id",negpos_databar["uuid"])])
+                self._xml_start_tag( 'x14:dataBar', [("gradient","false")])
+                # self._xml_start_tag( 'x14:dataBar', [("axisPosition",'middle'),("gradient","false")])
+                self._xml_start_tag( 'x14:cfvo', [("type",'min')])
+                self._xml_end_tag( 'x14:cfvo' )
+                self._xml_start_tag( 'x14:cfvo', [("type",'max')])
+                # self._xml_empty_tag( 'x14:axisColor', [("rgb",'FF000000')])
+                self._xml_end_tag( 'x14:cfvo' )
 
-        # Write the sparkline elements.
-        for sparkline in reversed(sparklines):
-
-            # Write the x14:sparklineGroup element.
-            self._write_sparkline_group(sparkline)
-
-            # Write the x14:colorSeries element.
-            self._write_color_series(sparkline['series_color'])
-
-            # Write the x14:colorNegative element.
-            self._write_color_negative(sparkline['negative_color'])
-
-            # Write the x14:colorAxis element.
-            self._write_color_axis()
-
-            # Write the x14:colorMarkers element.
-            self._write_color_markers(sparkline['markers_color'])
-
-            # Write the x14:colorFirst element.
-            self._write_color_first(sparkline['first_color'])
-
-            # Write the x14:colorLast element.
-            self._write_color_last(sparkline['last_color'])
-
-            # Write the x14:colorHigh element.
-            self._write_color_high(sparkline['high_color'])
-
-            # Write the x14:colorLow element.
-            self._write_color_low(sparkline['low_color'])
-
-            if sparkline['date_axis']:
-                self._xml_data_element('xm:f', sparkline['date_axis'])
-
-            self._write_sparklines(sparkline)
-
-            self._xml_end_tag('x14:sparklineGroup')
-
-        self._xml_end_tag('x14:sparklineGroups')
-        self._xml_end_tag('ext')
+                self._xml_empty_tag( 'x14:negativeFillColor', [("rgb",'FF953735')])
+                self._xml_end_tag( 'x14:dataBar' )
+                self._xml_end_tag( 'x14:cfRule' )
+                self._xml_data_element( 'xm:sqref', negpos_databar["cond_range"] )
+                self._xml_end_tag( 'x14:conditionalFormatting' )
+            self._xml_end_tag( 'x14:conditionalFormattings' )
+            self._xml_end_tag('ext')
         self._xml_end_tag('extLst')
 
     def _write_sparklines(self, sparkline):
